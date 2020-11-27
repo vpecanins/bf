@@ -20,11 +20,18 @@ area = np.genfromtxt(data_lines, delimiter="\t", usecols=1, dtype=np.uint)
 points_t1 = np.genfromtxt(data_lines, delimiter="\t", usecols=2, dtype=np.uint) # greyscale
 points_t2 = np.genfromtxt(data_lines, delimiter="\t", usecols=3, dtype=np.uint) # compress
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(2,1)
 
-ax.set(xlabel='Area', ylabel='Execute cycles')
+ax[0].set_title("greyscale")
+ax[1].set_title("compress")
 
-plt.plot(area, points_t1, 'o', color='black')
+ax[0].set(xlabel='Area', ylabel='Execute cycles')
+ax[1].set(xlabel='Area', ylabel='Execute cycles')
+
+ax[0].plot(area, points_t1, 'o', color='blue')
+ax[1].plot(area, points_t2, 'o', color='orange')
+
+fig.tight_layout(pad=0.5)
 
 plt.show()
 
