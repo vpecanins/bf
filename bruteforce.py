@@ -2,13 +2,13 @@ import os
 import re
 
 # Explore variables
-issuewidth=8
+issuewidth=16
 memload=4
 memstore=4
 mempft=2
-alu=8
+alu=16
 mpy=1
-memory=4
+memory=8
 dreg=64
 breg=8
 
@@ -47,7 +47,7 @@ def do_bruteforce():
 	n = out_file.write(data)
 	out_file.close()
 
-	# Cd to working directory
+	# Cd to working directoryplt.title('compress, dynamic profile')
 	os.chdir(dir_name)
 
 	# Execute benchmarks
@@ -119,6 +119,8 @@ def do_bruteforce():
 		out_file.close()
 
 # Sweep variables as needed
-for dreg in [32, 64, 96]:
-	for breg in [8, 16]:
-		do_bruteforce()
+for memload in [2, 4, 8]:
+	for memstore in [2, 4, 8]:
+		for mempft in [2, 4, 8]:
+			memory=max(memload, memstore, mempft)
+			do_bruteforce()
