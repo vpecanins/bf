@@ -1,16 +1,21 @@
 import os
 import re
 
+benchmarks = ['greyscale', 'greyscale_pragma', 'compress']
+
+out_dir = "bf"
+os.mkdir(out_dir)
+
 # Explore variables
-issuewidth=16
-memload=4
-memstore=4
-mempft=2
-alu=16
+issuewidth=32
+memload=32
+memstore=32
+mempft=32
+alu=32
 mpy=0
-memory=8
-dreg=64
-breg=8
+memory=32
+dreg=128
+breg=32
 
 def do_bruteforce():
 	# Load configuration.mm template
@@ -40,6 +45,8 @@ def do_bruteforce():
 	dir_name += str(dreg) + '_'
 	dir_name += str(breg)
 
+	os.chdir(out_dir)
+
 	os.mkdir(dir_name)
 
 	# Write configuration.mm with explore variables
@@ -49,78 +56,62 @@ def do_bruteforce():
 
 	# Cd to working directoryplt.title('compress, dynamic profile')
 	os.chdir(dir_name)
-
-	# Execute benchmarks
-	os.system("run greyscale -O3")
-	os.system("run compress -O3")
-
-	# Remove unused files to save disk space
-	os.remove("output-greyscale.c/a.out")
-	os.remove("output-greyscale.c/greyscale.cs.c")
-	os.remove("output-greyscale.c/greyscale.c")
-	os.remove("output-greyscale.c/greyscale.s")
-	os.remove("output-greyscale.c/gmon-dcache.out")
-	os.remove("output-greyscale.c/gmon-icache.out")
-	os.remove("output-greyscale.c/gmon-nocache.out")
-	os.remove("output-greyscale.c/gmon.out")
-	os.remove("output-compress.c/a.out")
-	os.remove("output-compress.c/compress.cs.c")
-	os.remove("output-compress.c/compress.c")
-	os.remove("output-compress.c/compress.s")
-	os.remove("output-compress.c/gmon-dcache.out")
-	os.remove("output-compress.c/gmon-icache.out")
-	os.remove("output-compress.c/gmon-nocache.out")
-	os.remove("output-compress.c/gmon.out")
 	
-	# Extract cycles
+	# Area estimation (slide 26, 27)
+	# https://brightspace.tudelft.nl/d2l/le/content/280562/viewContent/1851938/View
 	
-	# Calculate area estimation (slide 26)
+	# Alu, Multipliers & Memory Load/Store units
 	area = alu * 3273 + mpy * 40614 + (memory) * 1500
-	area += dreg * 243788/64 + breg * 258/8 + (memload+memstore)*1000
+	# GPR area
+	area += 26388/64 * dreg * (issuewidth*issuewidth) / 16
+	# BR area
+	area += 258/8 * breg * (issuewidth*issuewidth) / 16
+	# Connections
+	area += (memload+memstore+mempft)*1000
 	
 	with open("area", "w") as out_file:
 		n = out_file.write(str(area))
 		out_file.close()
 		
-	ncycles_greyscale=0
-	ncycles_compress=0
+	# Execute benchmarks
+	ncycles = {}
 	
-	with open("cycles-greyscale", "w") as out_file:
-		with open("output-greyscale.c/ta.log.000", "r") as in_file:
-			regex = r"(?:Execution Cycles:\s*)(?P<ncycles>[0-9\-e.]*).*?"
-			data = in_file.read()
-			matches = re.finditer(regex, data, re.MULTILINE)
-			for match in matches:
-				ncycles_greyscale = match.group("ncycles")
-			in_file.close()
-			
-		n = out_file.write(str(ncycles_greyscale))
-		out_file.close()
+	
+	for b in benchmarks:
+		# Run VEX compiler and simulator
+		os.system("run " + b + " -O3 -H3")
 		
-	with open("cycles-compress", "w") as out_file:
-		with open("output-compress.c/ta.log.000", "r") as in_file:
-			regex = r"(?:Execution Cycles:\s*)(?P<ncycles>[0-9\-e.]*).*?"
-			data = in_file.read()
-			matches = re.finditer(regex, data, re.MULTILINE)
-			for match in matches:
-				ncycles_compress = match.group("ncycles")
-			in_file.close()
-			
-		n = out_file.write(str(ncycles_compress))
-		out_file.close()
-
+		with open("cycles-" + b, "w") as out_file:
+			with open("output-" + b + ".c/ta.log.000", "r") as in_file:
+				regex = r"(?:Execution Cycles:\s*)(?P<ncycles>[0-9\-e.]*).*?"
+				data = in_file.read()
+				matches = re.finditer(regex, data, re.MULTILINE)
+				for match in matches:
+					ncycles[b] = match.group("ncycles")
+				in_file.close()
+				
+			n = out_file.write(str(ncycles[b]))
+			out_file.close()
+	
+	os.chdir('../')
+	
 	os.chdir('../')
 	
 	with open("bruteforce-results.txt", "a") as out_file:
 		out_file.write(dir_name)
 		out_file.write("\t" + str(area))
-		out_file.write("\t" + str(ncycles_greyscale))
-		out_file.write("\t" + str(ncycles_compress) + "\n")
+		for b in benchmarks:
+			out_file.write("\t" + str(ncycles[b]))
+		out_file.write("\n")
 		out_file.close()
 
+# header
+#with open("bruteforce-results.txt", "a") as out_file:
+#	out_file.write("DirName\tArea")
+#	for b in benchmarks:
+#		out_file.write("\t"+b)
+#	out_file.write("\n")
+
 # Sweep variables as needed
-for memload in [2, 4, 8]:
-	for memstore in [2, 4, 8]:
-		for mempft in [2, 4, 8]:
-			memory=max(memload, memstore, mempft)
-			do_bruteforce()
+for issuewidth in range(1,32+1):
+	do_bruteforce()
