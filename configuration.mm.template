@@ -55,11 +55,11 @@ RES: CopyDst.0      0
 
 # The following parameter specifies the number of 32-bit general purpose
 # registers available to this cluster.
-REG: $r0            <dregs>
+REG: $r0            <dreg>
 
 # The following parameter specifies the number of single bit condition
 # registers available to this cluster.
-REG: $b0            <bregs>
+REG: $b0            <breg>
 
 #=============================================================================#
 #            For the assignments, don't change anything below here            #

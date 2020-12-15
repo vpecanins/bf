@@ -1,21 +1,22 @@
 import os
 import re
 
-benchmarks = ['greyscale', 'greyscale_pragma', 'compress']
+benchmarks = ['greyscale', 'compress', 'x264', 'convolution_7x7']
 
 out_dir = "bf"
 os.mkdir(out_dir)
 
-# Explore variables
-issuewidth=32
-memload=32
-memstore=32
-mempft=32
-alu=32
+# DSE Variables, defined here.
+# Initial values set at the end of this file.
+issuewidth=0
+memload=0
+memstore=0
+mempft=0
+alu=0
 mpy=0
-memory=32
-dreg=128
-breg=32
+memory=0
+dreg=0
+breg=0
 
 def do_bruteforce():
 	# Load configuration.mm template
@@ -105,13 +106,16 @@ def do_bruteforce():
 		out_file.write("\n")
 		out_file.close()
 
-# header
-#with open("bruteforce-results.txt", "a") as out_file:
-#	out_file.write("DirName\tArea")
-#	for b in benchmarks:
-#		out_file.write("\t"+b)
-#	out_file.write("\n")
+# DSE variables
+issuewidth=1
+memload=128
+memstore=128
+mempft=128
+alu=128
+mpy=128
+memory=128
+dreg=128
+breg=128
 
-# Sweep variables as needed
 for issuewidth in range(1,32+1):
 	do_bruteforce()
